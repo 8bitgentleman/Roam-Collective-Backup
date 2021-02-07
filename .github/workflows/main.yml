@@ -6,26 +6,27 @@ on:
       - main
   schedule:
     -   cron: "5 */3 * * *"  # At minute 5 past every 3rd hour.
-
 jobs:
   backup:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     name: Backup
     timeout-minutes: 15
     steps:
       -   uses: actions/checkout@v2
-      -   name: Setup Python 3.8
+      -   name: Set up Python 3.8
           uses: actions/setup-python@v1
           with:
             python-version: 3.8
 
-      -   name: Setup Dependencies
+      -   name: Setup dependencies
           run: |
-            brew install borkdude/brew/jet
-            pip install git+https://github.com/adithyabsk/roam-to-git.git@master
+            wget -qO /tmp/jet.zip https://github.com/borkdude/jet/releases/download/v0.0.13/jet-0.0.13-linux-amd64.zip
+            unzip /tmp/jet.zip -d /tmp
+            sudo mv /tmp/jet /usr/local/bin/jet
+            pip install git+https://github.com/adithyabsk/roam-to-git.git
       -   name: Run backup
           run: |
-            roam-to-git --skip-git -f json markdown formatted edn -- .
+            roam-to-git --skip-git -f edn -- .
           env:
             ROAMRESEARCH_USER: ${{ secrets.ROAMRESEARCH_USER }}
             ROAMRESEARCH_PASSWORD: ${{ secrets.ROAMRESEARCH_PASSWORD }}
@@ -34,7 +35,4 @@ jobs:
       -   name: Commit Changes
           uses: stefanzweifel/git-auto-commit-action@v4
           with:
-            commit_message: Automated snapshot
-            commit_user_name: GitHub Actions
-            commit_user_email: actions@github.com
-            commit_author: GitHub Actions <actions@github.com>
+            commit_message: Automated snapshot ${{ github.run_number }}
